@@ -1,7 +1,7 @@
 define([
     'bz.menu/app',
 
-    'directives/dropdown'
+    'bz.menu/factories/elements'
 ], function (app) {
     'use strict';
 

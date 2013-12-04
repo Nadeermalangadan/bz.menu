@@ -6,27 +6,24 @@ define('bz.menu/app',[
 
     return angular.module('bz.menu', ['bz', 'bzNestedModel']);
 });
-define('directives/dropdown',[
+define('bz.menu/factories/elements',[
     'bz.menu/app'
-], function (app) {
+], function(app) {
     'use strict';
 
-    app.directive('bzMenuItem', ['$parse', '$compile', 'bzUser', function ($parse, $compile, bzUser) {
-        return {
-            restrict: 'C',
-            scope: false,
-            replace: true,
-            link: function (scope, element, attrs) {
-                console.info(scope.item)
-            }
-        };
+    app.factory('bz.menu.factories.elements', ['ngNestedResource', 'bzConfig', function (ngNestedResource, bzConfig) {
+        var MenuElementsService = ngNestedResource(bzConfig.resource('/menu/:id'), { 'id': '@id' }, {
+            update: { method: 'POST' },
+            getSettings: { method: 'POST', params: { 'action': 'getSettings' }, isArray: false }
+        });
+        return MenuElementsService;
     }]);
 
 });
 define('bz.menu/directives/menu',[
     'bz.menu/app',
 
-    'directives/dropdown'
+    'bz.menu/factories/elements'
 ], function (app) {
     'use strict';
 
@@ -85,10 +82,34 @@ define('bz.menu/directives/menu',[
     }]);
 
 });
+define('bz.menu/factories/menu',[
+    'angular',
+    'bz.menu/app',
+    'bz.menu/factories/elements'
+], function(angular, app) {
+    'use strict';
+
+    app.factory('bz.menu.factories.menu', ['$resource', 'bz.menu.factories.elements', 'bzConfig',
+        function ($resource, ElementsService, bzConfig) {
+            var MenuService = $resource(bzConfig.resource('/menu/:id'), { 'id': '@id' }, {
+                create: { method: 'PUT' }
+            });
+            MenuService.prototype.getElements = function(cb, allItems) {
+                cb = cb || angular.noop;
+                allItems = allItems || false;
+                ElementsService.getTree({ 'id': this.id, 'all': allItems }, cb);
+            };
+            return MenuService;
+        }
+    ]);
+
+});
 define('bz.menu',[
     'bz.menu/app',
 
-    'bz.menu/directives/menu'
+    'bz.menu/directives/menu',
+
+    'bz.menu/factories/menu'
 ], function (app) {
 
     //app.config([function() {}]);
